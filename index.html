@@ -2,28 +2,34 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>YouTube Viewer（操作制限付き）</title>
+  <title>YouTube Viewer（iPad対応）</title>
   <style>
     #playerWrapper {
       pointer-events: none; /* プレイヤーには触れられない */
       width: 560px;
       height: 315px;
+      margin-bottom: 10px;
     }
     iframe {
       width: 100%;
       height: 100%;
     }
-    #controls {
+    #controls, #loader {
       margin-top: 10px;
     }
     button {
       padding: 10px 20px;
       font-size: 1rem;
     }
+    input {
+      width: 400px;
+      padding: 5px;
+      font-size: 1rem;
+    }
   </style>
 </head>
 <body>
-  <h2>YouTube埋め込み再生（操作できない）</h2>
+  <h2>YouTube操作制限ビューア</h2>
 
   <div id="playerWrapper">
     <iframe id="player" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
@@ -33,7 +39,7 @@
     <button onclick="togglePlay()">▶ / ⏸ 切り替え</button>
   </div>
 
-  <div style="margin-top: 20px;">
+  <div id="loader">
     <input type="text" id="videoUrl" placeholder="YouTubeのURLを入力">
     <button onclick="loadVideo()">読み込み</button>
   </div>
@@ -41,6 +47,7 @@
   <script>
     let player;
     let isPlaying = false;
+    let pendingVideoId = null;
 
     function extractVideoID(url) {
       const regex = /(?:youtube\.com\/.*v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -56,20 +63,23 @@
         return;
       }
 
-      const iframe = document.getElementById('player');
-      iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&controls=0&rel=0&modestbranding=1&autoplay=1&loop=1`;
+      pendingVideoId = videoId;
 
-      // API再初期化のためフラグをリセット
+      if (player) {
+        player.loadVideoById(videoId);
+      } else {
+        const iframe = document.getElementById('player');
+        iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&controls=0&rel=0&modestbranding=1`;
+      }
+
       isPlaying = false;
     }
 
-    // YouTube iframe API 読み込み
     let tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     let firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-    // API読み込み後に呼び出される
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('player', {
         events: {
@@ -79,7 +89,9 @@
     }
 
     function onPlayerReady(event) {
-      isPlaying = false;
+      if (pendingVideoId) {
+        player.loadVideoById(pendingVideoId);
+      }
     }
 
     function togglePlay() {
