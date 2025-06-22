@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Custom Player</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        #player-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+        #player {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            pointer-events: none; /* タッチイベントを無効化 */
+            z-index: 10;
+        }
+        #controls {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #start-play {
+            display: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #28a745;
+        }
+        #start-play:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>YouTube Custom Player</h1>
+    <div id="player-container">
+        <div id="player"></div>
+        <div id="overlay"></div>
+    </div>
+    <button id="start-play">動画を再生</button>
+    <div id="controls">
+        <button id="play-pause">再生/一時停止</button>
+        <button id="rewind">10秒巻き戻し</button>
+        <button id="fast-forward">10秒早送り</button>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let player;
+        let isPlaying = false;
+
+        // YouTube IFrame APIの読み込み
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                videoId: 'dQw4w9WgXcQ', // ここにYouTube動画IDを指定
+                playerVars: {
+                    controls: 0, // デフォルトコントロール非表示
+                    disablekb: 1, // キーボード操作無効
+                    rel: 0, // 関連動画非表示
+                    modestbranding: 1, // YouTubeロゴ控えめ
+                    playsinline: 1, // iOSでインライン再生
+                },
+                events: {
+                    onReady: onPlayerReady,
+                    onStateChange: onPlayerStateChange,
+                },
+            });
+        }
+
+        function onPlayerReady(event) {
+            // 初期状態では再生ボタンを表示
+            document.getElementById('start-play').style.display = 'block';
+            document.getElementById('controls').style.display = 'none';
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                document.getElementById('play-pause').textContent = '一時停止';
+            } else {
+                isPlaying = false;
+                document.getElementById('play-pause').textContent = '再生';
+            }
+        }
+
+        // 再生開始ボタン（iPadなどの自動再生対策）
+        document.getElementById('start-play').addEventListener('click', () => {
+            player.playVideo();
+            document.getElementById('start-play').style.display = 'none';
+            document.getElementById('controls').style.display = 'flex';
+        });
+
+        // 再生・一時停止ボタン
+        document.getElementById('play-pause').addEventListener('click', () => {
+            if (isPlaying) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        });
+
+        // 10秒巻き戻し
+        document.getElementById('rewind').addEventListener('click', () => {
+            player.seekTo(player.getCurrentTime() - 10, true);
+        });
+
+        // 10秒早送り
+        document.getElementById('fast-forward').addEventListener('click', () => {
+            player.seekTo(player.getCurrentTime() + 10, true);
+        });
+    </script>
+</body>
+</html>
